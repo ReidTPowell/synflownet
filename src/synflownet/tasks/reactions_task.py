@@ -28,6 +28,7 @@ from synflownet.online_trainer import StandardOnlineTrainer
 from synflownet.utils import metrics, sascore
 from synflownet.utils.conditioning import TemperatureConditional
 from synflownet.utils.gpu_vina import QuickVina2GPU
+from synflownet.utils.boltz2_predictor import Boltz2Predictor
 from synflownet.utils.misc import get_worker_device
 from synflownet.utils.transforms import to_logreward
 
@@ -55,6 +56,12 @@ class ReactionTask(GFNTask):
         self.cfg = cfg
         self.reward = cfg.reward
         self.models = self._load_task_models()
+        if self.reward == "boltz2":
+            self.boltz2_predictor = Boltz2Predictor(
+                model_path=self.cfg.task.boltz2.model_path,
+                device=self.cfg.task.boltz2.device,
+            )
+            self.protein_sequence = self._load_protein_sequence(self.cfg.task.boltz2.protein_fasta)
         self.temperature_conditional = TemperatureConditional(cfg)
         self.num_cond_dim = self.temperature_conditional.encoding_size()
 
@@ -74,6 +81,11 @@ class ReactionTask(GFNTask):
 
     def cond_info_to_logreward(self, cond_info: Dict[str, Tensor], flat_reward: ObjectProperties) -> LogScalar:
         return LogScalar(self.temperature_conditional.transform(cond_info, to_logreward(flat_reward)))
+
+    def _load_protein_sequence(self, fasta_path: str) -> str:
+        with open(fasta_path, "r") as f:
+            lines = [l.strip() for l in f if not l.startswith(">")]
+        return "".join(lines)
 
     def seh_proxy_reward_from_graph(self, graphs: List[gd.Data], mols: List[Chem.Mol], traj_lens: Tensor) -> Tensor:
         batch = gd.Batch.from_data_list([i for i in graphs if i is not None])
@@ -114,6 +126,11 @@ class ReactionTask(GFNTask):
 
         return torch.tensor(vina_rewards).float().clip(1e-4, 100)
 
+    def boltz2_rewards_from_graph(self, mols: List[Chem.Mol]) -> Tensor:
+        smiles = [Chem.MolToSmiles(m) for m in mols]
+        affinities = self.boltz2_predictor.predict(self.protein_sequence, smiles)
+        return torch.tensor(affinities).float().clip(1e-4, 100)
+
     def qed_rewards_from_mols(self, mols: List[RDMol]) -> Tensor:
         return torch.tensor([QED.qed(m) for m in mols])
 
@@ -142,6 +159,8 @@ class ReactionTask(GFNTask):
             return self.seh_proxy_reward_from_graph(graphs, mols, traj_lens)
         elif self.reward == "vina":
             return self.vina_rewards_from_graph(graphs, mols)
+        elif self.reward == "boltz2":
+            return self.boltz2_rewards_from_graph(mols)
         elif self.reward == "qed":
             return self.qed_rewards_from_mols(mols)
         elif self.reward == "gsk":
