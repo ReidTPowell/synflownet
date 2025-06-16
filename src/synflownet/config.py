@@ -8,7 +8,6 @@ from synflownet.algo.config import AlgoConfig
 from synflownet.data.config import ReplayConfig
 from synflownet.models.config import ModelConfig
 from synflownet.tasks.config import TasksConfig, VinaConfig
-from synflownet.tasks.config import Boltz2Config
 from synflownet.utils.config import ConditionalsConfig
 from synflownet.utils.misc import StrictDataClass
 
@@ -114,7 +113,6 @@ class Config(StrictDataClass):
     cond: ConditionalsConfig = field(default_factory=ConditionalsConfig)
     reward: str = "seh_reaction"
     vina: VinaConfig = field(default_factory=VinaConfig)
-    boltz2: Boltz2Config = field(default_factory=Boltz2Config)
 
 
 def init_empty(cfg):
