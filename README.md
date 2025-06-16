@@ -43,10 +43,6 @@ The training relies on two data sources: reaction templates and building blocks.
 
 SynFlowNet uses a reward to guide the molecule generation process. We have implemented a few reward functions in the `ReactionTask` class. These include the SeH binding proxy, QED, oracles from [PyTDC](https://pypi.org/project/PyTDC/) and Vina docking (see below). Other reward functions can be imported in the `synflownet/tasks/reactions_task.py` file.
 
-#### Boltz-2 affinity prediction
-
-`ReactionTask` also supports Boltz-2 predicted affinities as a reward by setting `cfg.reward` to `"boltz2"`. Provide the path to a Boltz-2 checkpoint and the target protein sequence in `cfg.task.boltz2`. During training, the model will query Boltz-2 instead of Vina to obtain binding affinity rewards.
-
 ### Training
 
 The model can be trained by running `synflownet/tasks/reactions_task.py` using different reward functions. You may want to change the default configuration in `main()`.

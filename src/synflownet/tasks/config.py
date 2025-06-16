@@ -21,15 +21,6 @@ class ReactionTaskConfig:
 
 
 @dataclass
-class Boltz2Config(StrictDataClass):
-    """Configuration for Boltz-2 affinity prediction."""
-
-    model_path: str = "models/boltz2.pt"
-    protein_fasta: str = "data/protein_sequences/target_protein.fasta"
-    device: str = "cpu"
-
-
-@dataclass
 class VinaConfig(StrictDataClass):
     opencl_binary_path: str = (
         "bin/QuickVina2-GPU-2-1"  # needed if you use VINA for rewards
@@ -43,4 +34,3 @@ class VinaConfig(StrictDataClass):
 @dataclass
 class TasksConfig(StrictDataClass):
     reactions_task: ReactionTaskConfig = field(default_factory=ReactionTaskConfig)
-    boltz2: Boltz2Config = field(default_factory=Boltz2Config)
